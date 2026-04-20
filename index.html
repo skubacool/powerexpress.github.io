@@ -1,0 +1,1082 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEX Investment Feasibility</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1a6b3c;--green-light:#2d9e5e;--green-pale:#e8f5e9;
+  --amber:#e6900a;--amber-pale:#fff8e1;
+  --red:#c62828;--red-pale:#ffebee;
+  --blue:#0055a5;--blue-pale:#e3f0ff;
+  --bg:#f0f4f8;--card:#fff;--text:#1e293b;--muted:#64748b;
+  --border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.1);
+  --radius:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+
+/* ── Header ── */
+header{background:#fff;color:var(--text);padding:12px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.12);border-bottom:3px solid var(--green)}
+header h1{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+header p{font-size:12px;color:var(--muted);margin-top:2px}
+.logo img{height:48px;display:block}
+.hdr-divider{width:1px;height:40px;background:var(--border);margin:0 6px}
+
+/* ── Layout ── */
+.layout{display:grid;grid-template-columns:370px 1fr;min-height:calc(100vh - 64px);gap:0}
+
+/* ── Inputs Panel ── */
+.inputs-panel{background:var(--card);border-right:1px solid var(--border);padding:16px;overflow-y:auto;max-height:calc(100vh - 64px);position:sticky;top:0}
+.section{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.sec-hd{background:#f8fafc;padding:9px 12px;font-weight:600;font-size:12px;color:var(--green);cursor:pointer;display:flex;justify-content:space-between;user-select:none}
+.sec-hd:hover{background:#f1f5f9}
+.sec-bd{padding:12px}
+.section.collapsed .sec-bd{display:none}
+.sec-hd .chevron{transition:transform .2s}
+.section.collapsed .sec-hd .chevron{transform:rotate(-90deg)}
+
+/* ── Form elements ── */
+.fg{margin-bottom:9px}
+.fg label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:500}
+.fg input[type=number],.fg select{width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;color:var(--text)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px rgba(26,107,60,.15)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ck-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:12px;color:var(--text)}
+.ck-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--green);cursor:pointer}
+.info-chip{background:var(--green-pale);border:1px solid #c8e6c9;border-radius:6px;padding:7px 10px;font-size:11.5px;color:#1b5e20;margin-top:6px;line-height:1.6}
+.info-chip b{display:block;margin-bottom:1px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;opacity:.8}
+.warn-chip{background:var(--amber-pale);border:1px solid #ffe082;border-radius:6px;padding:7px 10px;font-size:11.5px;color:#5d3a00;margin-top:6px}
+
+.calc-btn{width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;transition:background .2s;letter-spacing:.2px}
+.calc-btn:hover{background:#155c34}
+.reset-btn{width:100%;padding:7px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;margin-top:5px}
+.reset-btn:hover{background:#f1f5f9;color:var(--text)}
+
+/* ── Results ── */
+.results-panel{padding:18px;overflow-y:auto}
+
+/* ── Summary Cards ── */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.card{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-top:3px solid transparent}
+.card.c-irr{border-color:var(--amber)}
+.card.c-npv{border-color:var(--green)}
+.card.c-pb{border-color:var(--blue)}
+.card.c-inv{border-color:#94a3b8}
+.card-lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.card-val{font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.card-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.card.c-npv .card-val{color:var(--green)}
+.card.c-pb .card-val{color:var(--blue)}
+/* IRR conditional formatting */
+.card.c-irr.irr-green{border-color:#1a6b3c;background:#f0faf4}
+.card.c-irr.irr-green .card-val{color:#1a6b3c}
+.card.c-irr.irr-amber{border-color:#e6900a;background:#fffbf0}
+.card.c-irr.irr-amber .card-val{color:#e6900a}
+.card.c-irr.irr-red{border-color:#c62828;background:#fff5f5}
+.card.c-irr.irr-red .card-val{color:#c62828}
+.irr-legend{font-size:10px;color:var(--muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap}
+/* NPV conditional formatting */
+.card.c-npv.npv-pos{border-color:#1a6b3c;background:#f0faf4}
+.card.c-npv.npv-pos .card-val{color:#1a6b3c}
+.card.c-npv.npv-zero{border-color:#e6900a;background:#fffbf0}
+.card.c-npv.npv-zero .card-val{color:#e6900a}
+.card.c-npv.npv-neg{border-color:#c62828;background:#fff5f5}
+.card.c-npv.npv-neg .card-val{color:#c62828}
+.irr-legend span{display:flex;align-items:center;gap:3px}
+.irr-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ── Charts ── */
+.chart-box{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px}
+.tab-nav{display:flex;border-bottom:1px solid var(--border);padding:0 4px}
+.tab-btn{padding:10px 16px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+.tab-btn:hover{color:var(--green)}
+.chart-pane{display:none;padding:16px;height:300px}
+.chart-pane.active{display:block}
+
+/* ── Table ── */
+.tbl-box{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow)}
+.tbl-hd{padding:12px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead th{background:#f8fafc;padding:7px 9px;text-align:right;font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap;color:var(--muted);font-size:10.5px;text-transform:uppercase}
+thead th:first-child{text-align:center;width:44px}
+tbody td{padding:6px 9px;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+tbody td:first-child{text-align:center;font-weight:700;color:var(--green)}
+tbody tr:hover td{background:#f8fff8}
+.neg{color:var(--red)}
+.pos{color:var(--green)}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.bg-green{background:var(--green-pale);color:#1b5e20}
+.bg-amber{background:var(--amber-pale);color:#5d3a00}
+
+/* ── Company name input ── */
+.company-input{width:100%;padding:7px 10px;border:1.5px solid var(--green);border-radius:6px;font-size:13px;font-weight:500;color:var(--text);margin-bottom:14px}
+.company-input:focus{outline:none;box-shadow:0 0 0 2px rgba(26,107,60,.2)}
+.company-input::placeholder{color:#b0bec5;font-weight:400}
+/* ── Header company tag ── */
+.hdr-company{font-size:13px;font-weight:700;color:var(--green);margin-top:1px;display:none}
+/* ── PDF button ── */
+.pdf-btn{width:100%;padding:9px;background:#0055a5;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:5px;transition:background .2s}
+.pdf-btn:hover{background:#003d7a}
+/* ── Print meta bar ── */
+.print-meta{display:none;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:11.5px;gap:24px;flex-wrap:wrap;color:var(--text)}
+.print-meta span{color:var(--muted)}
+.print-meta strong{color:var(--text)}
+
+/* ── Responsive ── */
+@media(max-width:1100px){.layout{grid-template-columns:320px 1fr}.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.layout{grid-template-columns:1fr}.inputs-panel{position:static;max-height:none}.cards{grid-template-columns:repeat(2,1fr)}}
+
+/* ── Print / PDF ── */
+#print-view{display:none}
+@media print{
+  @page{size:A4 landscape;margin:0.8cm}
+  *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+  body > *:not(#print-view){display:none !important}
+  #print-view{display:block !important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="data:image/png;base64,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" alt="Power Express"></div>
+  <div class="hdr-divider"></div>
+  <div>
+    <h1>PEX Investment Feasibility</h1>
+    <div class="hdr-company" id="hdr-company"></div>
+    <p>Power Purchase Agreement · IRR / NPV / Payback · Annual Cash Flow Model</p>
+  </div>
+</header>
+
+<!-- Print meta bar (hidden on screen, visible on print) -->
+<div class="print-meta" id="print-meta">
+  <span>Company: <strong id="pm-company">—</strong></span>
+  <span>Capacity: <strong id="pm-mw">—</strong></span>
+  <span>Investment: <strong id="pm-inv">—</strong></span>
+  <span>PPA Term: <strong id="pm-term">—</strong></span>
+  <span>Operated Days: <strong id="pm-days">—</strong></span>
+  <span>PPA Discount: <strong id="pm-disc">—</strong></span>
+  <span>Ke: <strong id="pm-ke">—</strong></span>
+  <span>Generated: <strong id="pm-date">—</strong></span>
+</div>
+
+<div class="layout">
+<!-- ════════════════════════════════════════════════
+     INPUTS PANEL
+════════════════════════════════════════════════ -->
+<div class="inputs-panel">
+
+  <div class="fg">
+    <label style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">Company / Project Name</label>
+    <input type="text" id="companyName" class="company-input" placeholder="e.g. RLL Plastic Co., Ltd.">
+  </div>
+
+  <!-- A. System & Investment -->
+  <div class="section" id="s-sys">
+    <div class="sec-hd" onclick="toggle('s-sys')"><span>⚡ System &amp; Investment</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="fr">
+        <div class="fg"><label>Capacity (MW)</label><input type="number" id="mw" value="0.315" step="0.001" min="0.001"></div>
+        <div class="fg"><label>Total Investment (THB)</label><input type="number" id="inv" value="5928768" step="1000" min="0"></div>
+      </div>
+      <div class="fg"><label>PPA Term (years) — Depreciation equals PPA term</label><input type="number" id="ppaTerm" value="25" min="1" max="50"></div>
+      <div class="info-chip"><b>Cost Reference</b><span id="info-cost-mw">—</span></div>
+    </div>
+  </div>
+
+  <!-- B. Operating Days -->
+  <div class="section" id="s-days">
+    <div class="sec-hd" onclick="toggle('s-days')"><span>📅 Operating Days</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="ck-row"><input type="checkbox" id="workSat" checked><label for="workSat">Work Saturday (+52 days)</label></div>
+      <div class="ck-row"><input type="checkbox" id="workSun"><label for="workSun">Work Sunday (+52 days)</label></div>
+      <div class="fr">
+        <div class="fg"><label>National Holidays</label><input type="number" id="natHols" value="15" min="0" max="30"></div>
+        <div class="fg"><label>Nat. Holidays Worked</label><input type="number" id="natWorked" value="0" min="0" max="15"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Buffer Holidays</label><input type="number" id="bufHols" value="7" min="0" max="30"></div>
+        <div class="fg"><label>Extra Holidays</label><input type="number" id="extraHols" value="5" min="0" max="30"></div>
+      </div>
+      <div class="info-chip"><b>Operated Days</b><span id="info-days">—</span></div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <div class="ck-row"><input type="checkbox" id="hasLunch" checked><label for="hasLunch">Lunch Break (70/30 peak, else 80/20)</label></div>
+        <div class="fg" id="lunchGrp"><label>Lunch Solar Reduction (%)</label><input type="number" id="lunchPct" value="3" min="0" max="20" step="0.5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. Energy Generation -->
+  <div class="section" id="s-gen">
+    <div class="sec-hd" onclick="toggle('s-gen')"><span>🔋 Energy Generation</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="fg"><label>Generation Mode</label>
+        <select id="genMode">
+          <option value="cap">Capacity-Based (MW × 4.0 peak sun hrs/day)</option>
+          <option value="fixed">Fixed kWh per Day</option>
+        </select>
+      </div>
+      <div class="fg" id="fixedKwhGrp" style="display:none"><label>Fixed kWh per Day</label><input type="number" id="fixedKwh" value="1200" min="1"></div>
+      <div class="info-chip"><b>Year 1 Generation</b><span id="info-gen1">—</span></div>
+    </div>
+  </div>
+
+  <!-- D. Electricity Pricing -->
+  <div class="section" id="s-price">
+    <div class="sec-hd" onclick="toggle('s-price')"><span>💰 Electricity Pricing</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="fg"><label>Pricing Mode</label>
+        <select id="priceMode" onchange="showPriceMode()">
+          <option value="floating">1 · Floating Rate (market-linked)</option>
+          <option value="fixed">2 · Fixed Electricity Rate (contract)</option>
+          <option value="monthly">3 · Fixed Payment per Month (lease)</option>
+        </select>
+      </div>
+      <!-- Mode 1: Floating -->
+      <div id="grp-floating">
+        <div class="fr">
+          <div class="fg"><label>Peak Price (THB/kWh)</label><input type="number" id="peakP" value="4.1839" step="0.0001" min="0"></div>
+          <div class="fg"><label>Off-Peak Price (THB/kWh)</label><input type="number" id="offP" value="2.6037" step="0.0001" min="0"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>FT Rate (THB/kWh)</label><input type="number" id="ftP" value="0.0972" step="0.0001" min="0"></div>
+          <div class="fg"><label>Price Escalation (%/yr)</label><input type="number" id="priceEsc" value="1" step="0.1"></div>
+        </div>
+        <div class="fg"><label>PPA Discount off Retail (%)</label><input type="number" id="ppaDisc" value="25" min="0" max="60" step="0.5"></div>
+      </div>
+      <!-- Mode 2: Fixed Rate -->
+      <div id="grp-fixed" style="display:none">
+        <div class="fr">
+          <div class="fg"><label>Fixed Rate (THB/kWh)</label><input type="number" id="fixedRate" value="3.50" step="0.0001" min="0"></div>
+          <div class="fg"><label>Discount off Fixed Rate (%)</label><input type="number" id="fixedRateDisc" value="0" min="0" max="60" step="0.5"></div>
+        </div>
+      </div>
+      <!-- Mode 3: Fixed Monthly -->
+      <div id="grp-monthly" style="display:none">
+        <div class="fg"><label>Monthly Payment (THB/month)</label><input type="number" id="monthlyPayment" value="80000" step="1000" min="0"></div>
+      </div>
+      <div class="info-chip"><b>Revenue Preview (Yr 1)</b><span id="info-blended">—</span></div>
+    </div>
+  </div>
+
+  <!-- E. Costs -->
+  <div class="section" id="s-cost">
+    <div class="sec-hd" onclick="toggle('s-cost')"><span>🔧 Operating Costs</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="fr">
+        <div class="fg"><label>O&amp;M Growth (%/yr)</label><input type="number" id="omGrowth" value="3" step="0.1"></div>
+        <div class="fg"><label>Insurance IAR Rate (%)</label><input type="number" id="iarRate" value="0.3" step="0.01" min="0"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Insurance PL Rate (%)</label><input type="number" id="plRate" value="0.3" step="0.01" min="0"></div>
+        <div class="fg"><label>Other Cost Yr1 (THB)</label><input type="number" id="otherC" value="15000" step="500" min="0"></div>
+      </div>
+      <div class="fg"><label>Other Cost Growth (%/yr)</label><input type="number" id="otherGrowth" value="2" step="0.1"></div>
+      <div id="grp-inverter-opt" style="display:none">
+        <div class="ck-row"><input type="checkbox" id="inverterOpt" checked><label for="inverterOpt">Include inverter replacement at Year 10</label></div>
+      </div>
+      <div class="info-chip" id="info-inverter-chip"><b>Inverter Replacement</b> <span id="info-inverter">—</span></div>
+      <div class="info-chip"><b>Year 1 Cost Breakdown</b><span id="info-costs">—</span></div>
+    </div>
+  </div>
+
+  <!-- F. Tax & Finance -->
+  <div class="section" id="s-fin">
+    <div class="sec-hd" onclick="toggle('s-fin')"><span>📊 Tax &amp; Financial</span><span class="chevron">▾</span></div>
+    <div class="sec-bd">
+      <div class="fr">
+        <div class="fg"><label>Tax Rate (%)</label><input type="number" id="taxRate" value="20" min="0" max="50"></div>
+        <div class="fg"><label>Tax Holiday (years)</label><input type="number" id="taxHol" value="8" min="0" max="25"></div>
+      </div>
+      <div class="fg"><label>Discount Rate / Ke (%)</label><input type="number" id="ke" value="10" step="0.1" min="0"></div>
+      <div class="info-chip" id="info-taxhol">—</div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">⟳ Recalculate</button>
+  <button class="reset-btn" onclick="loadRef()">Load Reference Case (RLL 315 kW)</button>
+  <button class="pdf-btn" onclick="exportPDF()">⬇ Export to PDF</button>
+</div>
+<!-- /inputs -->
+
+<!-- ════════════════════════════════════════════════
+     RESULTS PANEL
+════════════════════════════════════════════════ -->
+<div class="results-panel">
+
+  <!-- Summary Cards -->
+  <div class="cards">
+    <div class="card c-irr" id="card-irr">
+      <div class="card-lbl">Equity IRR</div>
+      <div class="card-val" id="c-irr">—</div>
+      <div class="card-sub" id="c-irr-sub">Internal Rate of Return</div>
+      <div class="irr-legend">
+        <span><i class="irr-dot" style="background:#1a6b3c"></i>&gt;13% Good</span>
+        <span><i class="irr-dot" style="background:#e6900a"></i>10–13% OK</span>
+        <span><i class="irr-dot" style="background:#c62828"></i>&lt;10% Low</span>
+      </div>
+    </div>
+    <div class="card c-npv" id="card-npv">
+      <div class="card-lbl">NPV @ Ke</div>
+      <div class="card-val" id="c-npv">—</div>
+      <div class="card-sub" id="c-npv-sub">Net Present Value (THB)</div>
+    </div>
+    <div class="card c-pb">
+      <div class="card-lbl">Payback Period</div>
+      <div class="card-val" id="c-pb">—</div>
+      <div class="card-sub">Years to recover investment</div>
+    </div>
+    <div class="card c-inv">
+      <div class="card-lbl">Total Investment</div>
+      <div class="card-val" id="c-inv">—</div>
+      <div class="card-sub">THB (exc. VAT)</div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green-light)">
+      <div class="card-lbl">Year 1 Revenue</div>
+      <div class="card-val" id="c-rev" style="font-size:19px">—</div>
+      <div class="card-sub">THB</div>
+    </div>
+    <div class="card" style="border-top:3px solid #94a3b8">
+      <div class="card-lbl">EBITDA Margin (Yr1)</div>
+      <div class="card-val" id="c-margin" style="font-size:19px">—</div>
+      <div class="card-sub">% of revenue</div>
+    </div>
+    <div class="card" style="border-top:3px solid #94a3b8">
+      <div class="card-lbl">Operated Days</div>
+      <div class="card-val" id="c-days" style="font-size:19px">—</div>
+      <div class="card-sub">Days per year</div>
+    </div>
+    <div class="card" style="border-top:3px solid #94a3b8">
+      <div class="card-lbl">Year 1 Generation</div>
+      <div class="card-val" id="c-gen1" style="font-size:19px">—</div>
+      <div class="card-sub">kWh</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-box">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="showTab('t-fcff',this)">Annual FCFF</button>
+      <button class="tab-btn" onclick="showTab('t-cum',this)">Cumulative FCFF</button>
+      <button class="tab-btn" onclick="showTab('t-revcost',this)">Revenue vs Cost</button>
+    </div>
+    <div id="t-fcff" class="chart-pane active"><canvas id="ch-fcff"></canvas></div>
+    <div id="t-cum" class="chart-pane"><canvas id="ch-cum"></canvas></div>
+    <div id="t-revcost" class="chart-pane"><canvas id="ch-revcost"></canvas></div>
+  </div>
+
+  <!-- Cash Flow Table -->
+  <div class="tbl-box">
+    <div class="tbl-hd">
+      <span>Year-by-Year Cash Flow Model</span>
+      <span style="font-size:11px;font-weight:400;color:var(--muted)">All monetary values in THB</span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Yr</th>
+            <th>Days</th>
+            <th>Gen (kWh)</th>
+            <th>Revenue</th>
+            <th>O&amp;M</th>
+            <th>Insurance</th>
+            <th>Other Cost</th>
+            <th>Reg. Fee</th>
+            <th>Total Exp.</th>
+            <th>EBITDA</th>
+            <th>Depr.</th>
+            <th>EBIT</th>
+            <th>Tax</th>
+            <th>FCFF</th>
+            <th>Accum. FCFF</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="15" style="text-align:center;padding:28px;color:var(--muted)">Adjust inputs above and click Recalculate</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /results -->
+</div><!-- /layout -->
+<div id="print-view"></div>
+
+<script>
+// ── Chart instances & last model ────────────────────
+const CH = {};
+let lastModel = null, lastInputs = null;
+
+// ── Toggle section ──────────────────────────────────
+function toggle(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('collapsed');
+}
+
+// ── Tab switch ───────────────────────────────────────
+function showTab(id,btn){
+  document.querySelectorAll('.chart-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  setTimeout(()=>Object.values(CH).forEach(c=>c&&c.resize()),20);
+}
+
+// ── Helpers ──────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function v(id){ return parseFloat($(id).value)||0; }
+function vi(id){ return parseInt($(id).value)||0; }
+function vc(id){ return $(id).checked; }
+
+function fmt(n,d=0){
+  if(n===null||isNaN(n)) return '—';
+  const s=Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+  return n<0?'('+s+')':s;
+}
+function fmtM(n,d=2){ return fmt(n/1e6,d)+' M'; }
+function fmtK(n,d=0){ return fmt(n/1e3,d)+' k'; }
+
+// ── Inverter cost by size tier ───────────────────────
+function calcInverterCost(mw){
+  if(mw < 0.2)  return 100000;
+  if(mw < 0.5)  return 200000;
+  if(mw < 1.0)  return 300000;
+  if(mw < 1.5)  return 500000;
+  return 700000;
+}
+
+// ── Show/hide pricing mode fields ────────────────────
+function showPriceMode(){
+  const mode = $('priceMode').value;
+  $('grp-floating').style.display = mode==='floating' ? '' : 'none';
+  $('grp-fixed').style.display    = mode==='fixed'    ? '' : 'none';
+  $('grp-monthly').style.display  = mode==='monthly'  ? '' : 'none';
+  calculate();
+}
+
+// ── Input bundle ─────────────────────────────────────
+function inp(){
+  const mw       = v('mw') || 0.315;
+  const ppaTerm  = vi('ppaTerm') || 25;
+  const invBase  = calcInverterCost(mw);
+  let inverterC  = 0;
+  if(ppaTerm >= 15)                       inverterC = invBase;
+  else if(ppaTerm > 10 && vc('inverterOpt')) inverterC = invBase;
+  return{
+    mw, inv:v('inv'), ppaTerm, deprPeriod:ppaTerm,  // depreciation always = PPA term
+    workSat:vc('workSat'), workSun:vc('workSun'),
+    natHols:vi('natHols'), natWorked:vi('natWorked'), bufHols:vi('bufHols'), extraHols:vi('extraHols'),
+    hasLunch:vc('hasLunch'), lunchPct:v('lunchPct'),
+    genMode:$('genMode').value, fixedKwh:v('fixedKwh'),
+    priceMode:$('priceMode').value,
+    peakP:v('peakP'), offP:v('offP'), ftP:v('ftP'), priceEsc:v('priceEsc'), ppaDisc:v('ppaDisc'),
+    fixedRate:v('fixedRate'), fixedRateDisc:v('fixedRateDisc'),
+    monthlyPayment:v('monthlyPayment'),
+    omGrowth:v('omGrowth'), iarRate:v('iarRate'), plRate:v('plRate'),
+    otherC:v('otherC'), otherGrowth:v('otherGrowth'), inverterC,
+    taxRate:v('taxRate'), taxHol:vi('taxHol'), ke:v('ke'),
+  };
+}
+
+// ── Operated days ────────────────────────────────────
+function calcDays(p){
+  const d = 261+(p.workSat?52:0)+(p.workSun?52:0)
+    - p.natHols - p.bufHols - p.extraHols
+    + Math.min(p.natWorked, p.natHols);
+  return Math.min(365, Math.max(0,d));
+}
+
+// ── Registration fee ─────────────────────────────────
+function calcReg(mw){
+  const kw=mw*1000;
+  if(kw<=20) return 0;
+  let doc=0,wit=0;
+  if(kw<=200){      doc=11500; wit=kw<=100?0:6700; }
+  else if(kw<=1000){ doc=17500; wit=kw<=500?6700:10900; }
+  else{              doc=25000; wit=21800; }
+  return doc+wit;
+}
+
+// ── IRR (bisection) ──────────────────────────────────
+function calcIRR(cfs){
+  const npvAt=r=>cfs.reduce((s,c,t)=>s+c/Math.pow(1+r,t),0);
+  let lo=-0.9999, hi=9.0;
+  if(npvAt(lo)*npvAt(hi)>0) return null;
+  for(let i=0;i<300;i++){
+    const mid=(lo+hi)/2;
+    if(Math.abs(hi-lo)<1e-10) break;
+    npvAt(mid)>0 ? lo=mid : hi=mid;
+  }
+  return (lo+hi)/2;
+}
+
+// ── Build model ──────────────────────────────────────
+function buildModel(p){
+  const days  = calcDays(p);
+  const peakR = p.hasLunch ? 0.70 : 0.80;
+  const offR  = p.hasLunch ? 0.30 : 0.20;
+  const lunchF= p.hasLunch ? (1-Math.max(0,Math.min(100,p.lunchPct))/100) : 1;
+  const reg   = calcReg(p.mw);
+  const deprAmt = p.deprPeriod>0 ? p.inv/p.deprPeriod : 0;
+  const omBase  = p.mw<0.3 ? p.mw*250000 : p.mw*200000;
+  const insIAR  = p.iarRate/100 * p.inv;
+  const insPL   = p.plRate/100  * p.inv;
+  const taxHolApply = p.mw > 0.2;
+
+  const rows=[], cfs=[-p.inv];
+
+  for(let yr=1; yr<=p.ppaTerm; yr++){
+    // efficiency
+    const eff = Math.max(0.01, 0.99 - 0.004*(yr-1)) * lunchF;
+
+    // generation
+    const gen = p.genMode==='cap'
+      ? p.mw*1000*4.0*days*eff
+      : days*p.fixedKwh*eff;
+
+    // revenue — mode-dependent
+    let rev;
+    if(p.priceMode==='floating'){
+      const ef    = Math.pow(1+p.priceEsc/100, yr-1);
+      const pkYr  = p.peakP*ef, opYr=p.offP*ef, ftYr=p.ftP*ef;
+      const blend = pkYr*peakR + opYr*offR + ftYr;
+      rev = gen * blend * (1-p.ppaDisc/100);
+    } else if(p.priceMode==='fixed'){
+      rev = gen * p.fixedRate * (1-p.fixedRateDisc/100);
+    } else {
+      // monthly lease — fixed annual payment regardless of generation
+      rev = p.monthlyPayment * 12;
+    }
+
+    // costs
+    const om      = yr>=3 ? omBase*Math.pow(1+p.omGrowth/100, yr-3) : 0;
+    const ins     = insIAR + insPL;
+    const other   = p.otherC*Math.pow(1+p.otherGrowth/100, yr-1) + (yr===10?p.inverterC:0);
+    const regFee  = yr===1 ? reg : 0;
+    const totExp  = om + ins + other + regFee;
+
+    // P&L
+    const ebitda  = rev - totExp;
+    const depr    = yr<=p.deprPeriod ? deprAmt : 0;
+    const ebit    = ebitda - depr;
+    const taxHol  = taxHolApply && yr<=p.taxHol;
+    const tax     = taxHol ? 0 : Math.max(0,ebit)*p.taxRate/100;
+    const fcff    = ebitda - tax;
+
+    rows.push({yr,days,gen,rev,om,ins,other,regFee,totExp,ebitda,depr,ebit,tax,fcff,taxHol});
+    cfs.push(fcff);
+  }
+
+  // cumulative FCFF & payback
+  let accum=-p.inv, payback=null;
+  rows.forEach(r=>{
+    const prev=accum;
+    accum+=r.fcff;
+    r.accum=accum;
+    if(payback===null && accum>=0)
+      payback = r.yr-1 + (-prev)/r.fcff;
+  });
+
+  // NPV & IRR
+  const ke  = p.ke/100;
+  const npv = cfs.reduce((s,c,t)=>s+c/Math.pow(1+ke,t),0);
+  const irr = calcIRR(cfs);
+
+  return {rows, cfs, npv, irr, payback, days};
+}
+
+// ── Update info boxes ────────────────────────────────
+function updateInfo(p){
+  // cost/MW
+  const costMW = p.mw>0 ? p.inv/p.mw/1e6 : 0;
+  $('info-cost-mw').textContent = fmt(costMW,2)+' M THB/MW  |  Total: '+fmt(p.inv)+' | Depreciation = '+p.ppaTerm+' yrs (= PPA term)';
+
+  // days formula
+  const days=calcDays(p);
+  const s = p.workSat?'+52':'+0', su = p.workSun?'+52':'+0';
+  $('info-days').textContent =
+    `261 ${s} ${su} − ${p.natHols} − ${p.bufHols} − ${p.extraHols} + ${Math.min(p.natWorked,p.natHols)} = ${days} days`;
+
+  // lunch group
+  $('lunchGrp').style.display = p.hasLunch?'':'none';
+
+  // fixed kWh group
+  $('fixedKwhGrp').style.display = p.genMode==='fixed'?'':'none';
+
+  // yr1 gen preview
+  const lF = p.hasLunch?(1-Math.max(0,p.lunchPct)/100):1;
+  const g1 = p.genMode==='cap' ? p.mw*1000*4.0*days*0.99*lF : days*p.fixedKwh*0.99*lF;
+  $('info-gen1').textContent = fmt(g1,0)+' kWh';
+
+  // revenue preview (mode-dependent)
+  const peakR=p.hasLunch?0.70:0.80, offR=p.hasLunch?0.30:0.20;
+  if(p.priceMode==='floating'){
+    const bl = (p.peakP*peakR + p.offP*offR + p.ftP)*(1-p.ppaDisc/100);
+    $('info-blended').textContent = bl.toFixed(4)+' THB/kWh blended  ('+Math.round(peakR*100)+'% peak + '+Math.round(offR*100)+'% off-peak + FT, after '+p.ppaDisc+'% discount)';
+  } else if(p.priceMode==='fixed'){
+    const eff = p.fixedRate*(1-p.fixedRateDisc/100);
+    $('info-blended').textContent = eff.toFixed(4)+' THB/kWh effective  (fixed '+p.fixedRate+' × (1−'+p.fixedRateDisc+'%) — no escalation)';
+  } else {
+    $('info-blended').textContent = fmt(p.monthlyPayment*12,0)+' THB/yr  ('+fmt(p.monthlyPayment,0)+' THB/month × 12 — fixed lease, no discount)';
+  }
+
+  // costs yr1
+  const reg=calcReg(p.mw);
+  const ins=(p.iarRate+p.plRate)/100*p.inv;
+  $('info-costs').textContent =
+    `Reg: ${fmt(reg)} | Insurance: ${fmt(ins,0)} | O&M Yr1–2: — | Base O&M (Yr3+): ${fmt(p.mw<0.3?p.mw*250000:p.mw*200000,0)}`;
+
+  // inverter chip
+  const invBase = calcInverterCost(p.mw);
+  const optGrp  = $('grp-inverter-opt');
+  if(p.ppaTerm >= 15){
+    optGrp.style.display='none';
+    $('info-inverter').textContent = fmt(invBase)+' THB at Year 10 (included — contract ≥15 yrs)';
+  } else if(p.ppaTerm > 10){
+    optGrp.style.display='block';
+    $('info-inverter').textContent = fmt(invBase)+' THB at Year 10 (contract '+p.ppaTerm+' yrs — toggle above to include/exclude)';
+  } else {
+    optGrp.style.display='none';
+    $('info-inverter').textContent = 'Not applicable — PPA term ≤10 yrs (Year 10 not reached)';
+  }
+
+  // tax holiday
+  $('info-taxhol').innerHTML = p.mw>0.2
+    ? `<b>Tax Holiday</b> APPLIES — MW=${p.mw} > 0.2 → waived first ${p.taxHol} years`
+    : `<b>Tax Holiday</b> does NOT apply — MW=${p.mw} ≤ 0.2`;
+}
+
+// ── Update cards ─────────────────────────────────────
+function updateCards(m,p){
+  const irrPct = m.irr!==null ? m.irr*100 : null;
+  $('c-irr').textContent = irrPct!==null ? irrPct.toFixed(1)+'%' : 'N/A';
+  const card = $('card-irr');
+  card.classList.remove('irr-green','irr-amber','irr-red');
+  if(irrPct!==null){
+    if(irrPct>13)       { card.classList.add('irr-green'); $('c-irr-sub').textContent='Above target — Strong return'; }
+    else if(irrPct>=10) { card.classList.add('irr-amber'); $('c-irr-sub').textContent='Acceptable — Monitor closely'; }
+    else                { card.classList.add('irr-red');   $('c-irr-sub').textContent='Below threshold — Review assumptions'; }
+  } else {
+    $('c-irr-sub').textContent='Internal Rate of Return';
+  }
+  const npvM = m.npv/1e6;
+  $('c-npv').textContent  = (m.npv>=0?'':'−')+fmt(Math.abs(npvM),2)+' M';
+  const npvCard = $('card-npv');
+  npvCard.classList.remove('npv-pos','npv-zero','npv-neg');
+  if(m.npv > 1000){
+    npvCard.classList.add('npv-pos');  $('c-npv-sub').textContent='Positive NPV — Value creating';
+  } else if(m.npv >= -1000){
+    npvCard.classList.add('npv-zero'); $('c-npv-sub').textContent='Near zero NPV — Borderline';
+  } else {
+    npvCard.classList.add('npv-neg');  $('c-npv-sub').textContent='Negative NPV — Value destroying';
+  }
+  $('c-pb').textContent   = m.payback!==null ? m.payback.toFixed(2)+' yrs' : 'N/A';
+  $('c-inv').textContent  = fmt(p.inv/1e6,2)+' M';
+  const yr1=m.rows[0];
+  $('c-rev').textContent    = yr1?fmt(yr1.rev/1e6,2)+' M':'—';
+  $('c-margin').textContent = yr1&&yr1.rev>0 ? (yr1.ebitda/yr1.rev*100).toFixed(1)+'%' : '—';
+  $('c-days').textContent   = fmt(m.days);
+  $('c-gen1').textContent   = yr1?fmt(yr1.gen/1e3,0)+' k':'—';
+}
+
+// ── Update table ─────────────────────────────────────
+function updateTable(rows){
+  $('tbl-body').innerHTML = rows.map(r=>{
+    const ac = r.accum>=0?'pos':'neg';
+    return `<tr>
+      <td>${r.yr}</td>
+      <td>${r.days}</td>
+      <td>${fmt(r.gen,0)}</td>
+      <td>${fmt(r.rev,0)}</td>
+      <td>${r.om>0?fmt(r.om,0):'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${fmt(r.ins,0)}</td>
+      <td>${fmt(r.other,0)}${r.yr===10?' <span class="badge bg-amber">+Inv</span>':''}</td>
+      <td>${r.regFee>0?fmt(r.regFee,0):'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${fmt(r.totExp,0)}</td>
+      <td>${fmt(r.ebitda,0)}</td>
+      <td>${fmt(r.depr,0)}</td>
+      <td class="${r.ebit<0?'neg':''}">${fmt(r.ebit,0)}</td>
+      <td>${r.tax>0?fmt(r.tax,0):r.taxHol?'<span class="badge bg-green">Holiday</span>':'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="${r.fcff<0?'neg':'pos'}">${fmt(r.fcff,0)}</td>
+      <td class="${ac}">${fmt(r.accum,0)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Update charts ────────────────────────────────────
+function updateCharts(m,p){
+  const labels = m.rows.map(r=>'Y'+r.yr);
+  const G='#1a6b3c', Ga='rgba(26,107,60,.55)', Gb='rgba(26,107,60,.1)';
+  const R='#c62828', Ra='rgba(198,40,40,.5)';
+  const A='#e6900a', Aa='rgba(230,144,10,.55)';
+  const B='#0055a5', Ba='rgba(0,85,165,.7)';
+
+  // Chart 1 — Annual FCFF bar
+  if(CH.fcff) CH.fcff.destroy();
+  CH.fcff = new Chart($('ch-fcff').getContext('2d'),{
+    type:'bar',
+    data:{ labels, datasets:[{
+      label:'FCFF (THB)',
+      data: m.rows.map(r=>r.fcff),
+      backgroundColor: m.rows.map(r=>r.fcff>=0?Ga:Ra),
+      borderColor:     m.rows.map(r=>r.fcff>=0?G:R),
+      borderWidth:1,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'FCFF: '+fmt(c.raw)+' THB'}} },
+      scales:{ y:{ticks:{callback:v=>fmtK(v)}} }
+    }
+  });
+
+  // Chart 2 — Cumulative FCFF
+  if(CH.cum) CH.cum.destroy();
+  const cumLabels=['Y0',...labels];
+  const cumData=[-p.inv, ...m.rows.map(r=>r.accum)];
+  CH.cum = new Chart($('ch-cum').getContext('2d'),{
+    type:'line',
+    data:{ labels:cumLabels, datasets:[{
+      label:'Cumulative FCFF',
+      data:cumData,
+      borderColor:G, backgroundColor:Gb, fill:true, tension:0.3, pointRadius:3,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>fmt(c.raw)+' THB'}} },
+      scales:{
+        y:{
+          ticks:{callback:v=>fmtK(v)},
+          grid:{
+            color:ctx=>ctx.tick.value===0?'#c62828':'#e2e8f0',
+            lineWidth:ctx=>ctx.tick.value===0?2:1,
+          }
+        }
+      }
+    }
+  });
+
+  // Chart 3 — Revenue vs Cost
+  if(CH.rc) CH.rc.destroy();
+  CH.rc = new Chart($('ch-revcost').getContext('2d'),{
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Revenue',      data:m.rows.map(r=>r.rev),    backgroundColor:Ga, borderColor:G, borderWidth:1, order:2 },
+      { label:'Total Expense',data:m.rows.map(r=>r.totExp), backgroundColor:Aa, borderColor:A, borderWidth:1, order:2 },
+      { label:'EBITDA',       data:m.rows.map(r=>r.ebitda), type:'line', borderColor:B, backgroundColor:'transparent', tension:0.3, pointRadius:2, order:1, yAxisID:'y' },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)+' THB'}} },
+      scales:{ y:{ticks:{callback:v=>fmtK(v)}} }
+    }
+  });
+}
+
+// ── Main calculate ───────────────────────────────────
+function calculate(){
+  const p = inp();
+  lastInputs = p;
+  updateInfo(p);
+  const m = buildModel(p);
+  lastModel = m;
+  updateCards(m,p);
+  updateTable(m.rows);
+  updateCharts(m,p);
+  updatePrintMeta(p,m.days);
+  syncCompany();
+}
+
+// ── Load reference case ──────────────────────────────
+function loadRef(){
+  const fields={
+    mw:0.315, inv:5928768, ppaTerm:25,
+    natHols:15, natWorked:0, bufHols:0, extraHols:0,
+    lunchPct:3, fixedKwh:1200,
+    peakP:4.1839, offP:2.6037, ftP:0.0972, priceEsc:1, ppaDisc:25,
+    fixedRate:3.50, fixedRateDisc:0, monthlyPayment:80000,
+    omGrowth:3, iarRate:0.3, plRate:0.3, otherC:15000, otherGrowth:2,
+    taxRate:20, taxHol:8, ke:10,
+  };
+  Object.entries(fields).forEach(([k,val])=>{ if($(k)) $(k).value=val; });
+  $('workSat').checked=true;
+  $('workSun').checked=false;
+  $('hasLunch').checked=true;
+  $('genMode').value='cap';
+  $('priceMode').value='floating';
+  showPriceMode();
+}
+
+// ── Company name sync ────────────────────────────────
+function syncCompany(){
+  const name = $('companyName').value.trim();
+  const hdr  = $('hdr-company');
+  if(name){ hdr.textContent=name; hdr.style.display='block'; }
+  else     { hdr.style.display='none'; }
+}
+
+// ── Update print meta bar ────────────────────────────
+function updatePrintMeta(p,days){
+  $('pm-company').textContent = $('companyName').value.trim() || '—';
+  $('pm-mw').textContent      = p.mw+' MW';
+  $('pm-inv').textContent     = fmt(p.inv)+' THB';
+  $('pm-term').textContent    = p.ppaTerm+' yrs';
+  $('pm-days').textContent    = days+' days/yr';
+  $('pm-disc').textContent    = p.ppaDisc+'%';
+  $('pm-ke').textContent      = p.ke+'%';
+  $('pm-date').textContent    = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+// ── PDF Export ───────────────────────────────────────
+async function exportPDF(){
+  if(!lastModel||!lastInputs){ calculate(); }
+
+  // ── 1. Show all chart panes, force full render, capture ──
+  const panes = document.querySelectorAll('.chart-pane');
+  const prevVis = Array.from(panes).map(p=>p.style.display);
+  // Make visible with explicit dimensions so canvas has non-zero size
+  panes.forEach(p=>{ p.style.display='block'; p.style.visibility='visible'; });
+  // Let browser reflow first
+  await new Promise(r=>setTimeout(r,50));
+  // Resize AND force synchronous redraw — this is what was missing
+  Object.values(CH).forEach(c=>{ try{ c.resize(); c.update('none'); }catch(e){} });
+  // Wait for browser paint cycle to complete
+  await new Promise(r=>setTimeout(r,600));
+
+  const ch1=CH.fcff?CH.fcff.toBase64Image('image/png',1):'';
+  const ch2=CH.cum ?CH.cum.toBase64Image('image/png',1) :'';
+  const ch3=CH.rc  ?CH.rc.toBase64Image('image/png',1)  :'';
+
+  panes.forEach((p,i)=>{ p.style.display=prevVis[i]; p.style.visibility=''; });
+
+  // ── 2. Collect data ──
+  const p=lastInputs, m=lastModel;
+  const company=$('companyName').value.trim()||'';
+  const dateStr=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const logoSrc=document.querySelector('.logo img').src;
+  const yr1=m.rows[0];
+  const peakR=p.hasLunch?70:80, offR=p.hasLunch?30:20;
+
+  const irrPct=m.irr!==null?m.irr*100:null;
+  const irrCol=irrPct===null?'#64748b':irrPct>13?'#1a6b3c':irrPct>=10?'#e6900a':'#c62828';
+  const irrBg =irrPct===null?'#fff'   :irrPct>13?'#f0faf4':irrPct>=10?'#fffbf0':'#fff5f5';
+  const irrLbl=irrPct===null?'—'      :irrPct>13?'Above target — Strong return':irrPct>=10?'Acceptable — Monitor closely':'Below threshold — Review';
+  // NPV conditional colour
+  const npvCol=m.npv>1000?'#1a6b3c':m.npv>=-1000?'#e6900a':'#c62828';
+  const npvBg =m.npv>1000?'#f0faf4':m.npv>=-1000?'#fffbf0':'#fff5f5';
+  const npvLbl=m.npv>1000?'Positive NPV — Value creating':m.npv>=-1000?'Near zero NPV — Borderline':'Negative NPV — Value destroying';
+
+  // ── 3. HTML helpers ──
+  const S=`font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1e293b;font-size:9px;line-height:1.4`;
+
+  const card=(label,val,sub,topCol,valCol)=>`
+    <div style="background:#fff;border:1px solid #e2e8f0;border-top:3px solid ${topCol};border-radius:6px;padding:8px 10px">
+      <div style="font-size:7.5px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">${label}</div>
+      <div style="font-size:17px;font-weight:800;color:${valCol};line-height:1.1">${val}</div>
+      <div style="font-size:7.5px;color:#64748b;margin-top:2px">${sub}</div>
+    </div>`;
+
+  // ── 4. Parameters — 4-column horizontal grid ──
+  // Pricing row depends on mode
+  const pricingRows = p.priceMode==='floating'
+    ? [['Pricing Mode','Floating Rate'],
+       ['Peak Price','฿'+p.peakP+'/kWh ('+peakR+'%)'],
+       ['Off-Peak Price','฿'+p.offP+'/kWh ('+offR+'%)'],
+       ['FT Rate','฿'+p.ftP+'/kWh'],
+       ['Price Escalation',p.priceEsc+'%/yr'],
+       ['PPA Discount',p.ppaDisc+'%']]
+    : p.priceMode==='fixed'
+    ? [['Pricing Mode','Fixed Rate (contract)'],
+       ['Fixed Rate','฿'+p.fixedRate+'/kWh'],
+       ['Rate Discount',p.fixedRateDisc+'%'],
+       ['Effective Rate','฿'+(p.fixedRate*(1-p.fixedRateDisc/100)).toFixed(4)+'/kWh'],
+       ['Price Escalation','None'],
+       ['PPA Discount','N/A']]
+    : [['Pricing Mode','Fixed Monthly (lease)'],
+       ['Monthly Payment',fmt(p.monthlyPayment)+' THB/mo'],
+       ['Annual Revenue',fmt(p.monthlyPayment*12)+' THB/yr'],
+       ['Price Escalation','None'],
+       ['PPA Discount','N/A'],
+       ['Fixed for all years','Yes']];
+
+  const params=[
+    ['Capacity',p.mw+' MW'],
+    ['Total Investment',fmt(p.inv)+' THB'],
+    ['PPA / Depr. Term',p.ppaTerm+' yrs'],
+    ['Operated Days',m.days+' days/yr'],
+    ['Work Sat/Sun',(p.workSat?'Sat':'—')+'/'+(p.workSun?'Sun':'—')],
+    ['Lunch Break',p.hasLunch?'Yes (−'+p.lunchPct+'%)':'No'],
+    ['Gen Mode',p.genMode==='cap'?'Capacity-based':'Fixed kWh/day'],
+    ...pricingRows,
+    ['O&M Base',fmt(p.mw<0.3?p.mw*250000:p.mw*200000)+' THB'],
+    ['O&M Growth',p.omGrowth+'%/yr'],
+    ['Insurance IAR/PL',p.iarRate+'%/'+p.plRate+'%'],
+    ['Other Cost Yr1',fmt(p.otherC)+' THB'],
+    ['Inverter Repl.(Yr10)',p.inverterC>0?fmt(p.inverterC)+' THB':'N/A'],
+    ['Tax Rate',p.taxRate+'%'],
+    ['Tax Holiday',p.mw>0.2?p.taxHol+' yrs':'N/A'],
+    ['Discount Rate (Ke)',p.ke+'%'],
+    ['Year 1 Gen.',yr1?fmt(yr1.gen,0)+' kWh':'—'],
+  ];
+  const paramCells=params.map(([k,v])=>`
+    <div style="padding:4px 6px;border-bottom:1px solid #f1f5f9">
+      <div style="font-size:7px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px">${k}</div>
+      <div style="font-size:8.5px;font-weight:600;color:#1e293b;margin-top:1px">${v}</div>
+    </div>`).join('');
+
+  // ── 5. Cash flow table rows ──
+  const thS='padding:3px 4px;text-align:right;background:#f1f5f9;border-bottom:2px solid #e2e8f0;font-weight:700;color:#475569;white-space:nowrap;font-size:7.5px';
+  const tRows=m.rows.map((r,i)=>`<tr style="background:${i%2?'#f8fafc':'#fff'}">
+    <td style="text-align:center;font-weight:700;color:#1a6b3c;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${r.yr}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${r.days}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.gen,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.rev,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${r.om>0?fmt(r.om,0):'—'}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.ins,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.other,0)}${r.yr===10?' ★':''}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${r.regFee>0?fmt(r.regFee,0):'—'}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.totExp,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.ebitda,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${fmt(r.depr,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9;color:${r.ebit<0?'#c62828':'inherit'}">${fmt(r.ebit,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9">${r.tax>0?fmt(r.tax,0):r.taxHol?'Holiday':'—'}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9;font-weight:600;color:${r.fcff<0?'#c62828':'#1a6b3c'}">${fmt(r.fcff,0)}</td>
+    <td style="text-align:right;padding:2.5px 4px;border-bottom:1px solid #f1f5f9;font-weight:700;color:${r.accum>=0?'#1a6b3c':'#c62828'}">${fmt(r.accum,0)}</td>
+  </tr>`).join('');
+
+  // ── 6. Shared header snippet ──
+  const headerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;border-bottom:2.5px solid #1a6b3c;padding-bottom:8px;margin-bottom:10px">
+      <img src="${logoSrc}" style="height:42px;display:block">
+      <div style="width:1px;height:36px;background:#e2e8f0"></div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800;color:#1e293b;line-height:1.1">PEX Investment Feasibility</div>
+        ${company?`<div style="font-size:11px;font-weight:700;color:#1a6b3c;margin-top:1px">${company}</div>`:''}
+        <div style="font-size:8px;color:#64748b;margin-top:2px">Power Purchase Agreement · IRR / NPV / Payback · Annual Cash Flow Model</div>
+      </div>
+      <div style="text-align:right;font-size:8px;color:#64748b;line-height:2">
+        <div>Generated: <strong style="color:#1e293b">${dateStr}</strong></div>
+        <div>Ke: <strong style="color:#1e293b">${p.ke}%</strong> &nbsp;·&nbsp; Tax Holiday: <strong style="color:#1e293b">${p.mw>0.2?p.taxHol+' yrs':'N/A'}</strong></div>
+      </div>
+    </div>`;
+
+  // ── 7. Build print view ──
+  $('print-view').innerHTML=`
+  <div style="${S}">
+
+    <!-- ═══ PAGE 1 ═══ -->
+    ${headerHTML}
+
+    <!-- PARAMETERS — 4-col grid -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:4px;padding-left:2px">Key Parameters</div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid #1a6b3c">
+        ${paramCells}
+      </div>
+    </div>
+
+    <!-- SUMMARY CARDS — 4 per row, 2 rows -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:7.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:4px;padding-left:2px">Investment Summary</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px">
+        <!-- IRR card (coloured) -->
+        <div style="background:${irrBg};border:1px solid ${irrCol};border-top:3px solid ${irrCol};border-radius:6px;padding:8px 10px">
+          <div style="font-size:7.5px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">Equity IRR</div>
+          <div style="font-size:20px;font-weight:800;color:${irrCol};line-height:1.1">${irrPct!==null?irrPct.toFixed(1)+'%':'N/A'}</div>
+          <div style="font-size:7.5px;color:${irrCol};margin-top:2px;font-weight:600">${irrLbl}</div>
+          <div style="font-size:7px;color:#94a3b8;margin-top:2px">▲13% ●10–13% ▼10%</div>
+        </div>
+        <div style="background:${npvBg};border:1px solid ${npvCol};border-top:3px solid ${npvCol};border-radius:6px;padding:8px 10px">
+          <div style="font-size:7.5px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">NPV @ Ke</div>
+          <div style="font-size:17px;font-weight:800;color:${npvCol};line-height:1.1">${(m.npv>=0?'':'-')}฿${fmt(Math.abs(m.npv)/1e6,2)} M</div>
+          <div style="font-size:7.5px;color:${npvCol};margin-top:2px;font-weight:600">${npvLbl}</div>
+        </div>
+        ${card('Payback Period',m.payback!==null?m.payback.toFixed(2)+' yrs':'N/A','Years to recover investment','#0055a5','#0055a5')}
+        ${card('Total Investment','฿'+fmt(p.inv/1e6,2)+' M','THB exc. VAT','#475569','#1e293b')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        ${card('Year 1 Revenue','฿'+fmt(yr1?yr1.rev/1e6:0,2)+' M','THB','#2d9e5e','#1e293b')}
+        ${card('EBITDA Margin Yr1',yr1&&yr1.rev>0?(yr1.ebitda/yr1.rev*100).toFixed(1)+'%':'—','% of Year 1 revenue','#475569','#1e293b')}
+        ${card('Operated Days',m.days+' days','Per year','#475569','#1e293b')}
+        ${card('Year 1 Generation',yr1?fmt(yr1.gen/1e3,1)+' k kWh':'—','Annual kWh output','#475569','#1e293b')}
+      </div>
+    </div>
+
+    <!-- CHARTS — 3 side by side -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      ${[['Annual FCFF (THB)',ch1],['Cumulative FCFF (THB)',ch2],['Revenue vs Total Cost (THB)',ch3]].map(([title,src])=>`
+        <div style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">
+          <div style="background:#f8fafc;padding:4px 8px;font-size:8px;font-weight:700;color:#1e293b;border-bottom:1px solid #e2e8f0">${title}</div>
+          ${src?`<img src="${src}" style="width:100%;height:150px;object-fit:contain;display:block">`
+               :`<div style="height:150px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px">No chart data</div>`}
+        </div>`).join('')}
+    </div>
+
+    <!-- PAGE 1 FOOTER -->
+    <div style="margin-top:8px;font-size:7px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:4px">
+      Confidential · PEX Investment Feasibility · Power Express 1980 Co., Ltd.${company?' · '+company:''} · ${dateStr} · Page 1 of 2
+    </div>
+
+    <!-- ═══ PAGE 2 ═══ -->
+    <div style="page-break-before:always;padding-top:2px">
+      ${headerHTML}
+
+      <!-- CASH FLOW TABLE -->
+      <div style="border:1px solid #e2e8f0;border-radius:7px;overflow:hidden">
+        <div style="background:#f8fafc;padding:5px 12px;font-size:9px;font-weight:700;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+          <span>Year-by-Year Cash Flow Model</span>
+          <span style="font-weight:400;color:#64748b;font-size:7.5px">★ Yr10 includes inverter replacement &nbsp;·&nbsp; All values in THB</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:8px">
+          <thead><tr>
+            <th style="${thS};text-align:center">Yr</th>
+            <th style="${thS}">Days</th>
+            <th style="${thS}">Gen (kWh)</th>
+            <th style="${thS}">Revenue</th>
+            <th style="${thS}">O&amp;M</th>
+            <th style="${thS}">Insurance</th>
+            <th style="${thS}">Other</th>
+            <th style="${thS}">Reg.</th>
+            <th style="${thS}">Total Exp.</th>
+            <th style="${thS}">EBITDA</th>
+            <th style="${thS}">Depr.</th>
+            <th style="${thS}">EBIT</th>
+            <th style="${thS}">Tax</th>
+            <th style="${thS}">FCFF</th>
+            <th style="${thS}">Accum. FCFF</th>
+          </tr></thead>
+          <tbody>${tRows}</tbody>
+        </table>
+      </div>
+
+      <!-- PAGE 2 FOOTER -->
+      <div style="margin-top:8px;font-size:7px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:4px">
+        Confidential · PEX Investment Feasibility · Power Express 1980 Co., Ltd.${company?' · '+company:''} · ${dateStr} · Page 2 of 2
+      </div>
+    </div>
+
+  </div>`;
+
+  window.print();
+  setTimeout(()=>{ $('print-view').innerHTML=''; }, 3000);
+}
+
+// ── Auto-recalc on input change ──────────────────────
+document.querySelectorAll('input,select').forEach(el=>{
+  el.addEventListener('change',calculate);
+  el.addEventListener('input',()=>{ clearTimeout(el._t); el._t=setTimeout(calculate,350); });
+});
+$('companyName').addEventListener('input', syncCompany);
+$('companyName').addEventListener('change', syncCompany);
+
+// ── Init ─────────────────────────────────────────────
+calculate();
+</script>
+</body>
+</html>
